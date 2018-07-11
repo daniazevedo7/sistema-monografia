@@ -6,4 +6,13 @@ Sistema de Controle de Monografia e Projeto
   Sistema que possibilita o controle de projetos em uma Universidade.
   
 Tecnologias:
-Java, JSF, Primefaces, JPA, Hibernate
+
+  Java
+  
+  JSF
+  
+  Primefaces
+  
+  JPA
+  
+  Hibernate
