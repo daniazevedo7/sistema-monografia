@@ -1,4 +1,4 @@
-# sistema-monografia
+# Sistema de Controle de Monografia e Projeto
 Repositório do sistema desenvolvido para a Monografia de conclusão do curso de graduação em Ciência da Computação
 
 Sistema de Controle de Monografia e Projeto
