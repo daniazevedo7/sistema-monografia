@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<ui:composition xmlns="http://www.w3.org/1999/xhtml"
+	xmlns:h="http://xmlns.jcp.org/jsf/html"
+	xmlns:f="http://xmlns.jcp.org/jsf/core"
+	xmlns:p="http://primefaces.org/ui"
+	xmlns:ui="http://xmlns.jcp.org/jsf/facelets"
+	template="/WEB-INF/template/Layout.xhtml"
+	xmlns:o="http://omnifaces.org/ui">
+
+	<ui:define name="titulo">
+		<title>Gestão Banca de Defesa</title>
+	</ui:define>
+	<ui:define name="conteudo">
+
+		<f:metadata>
+			<f:viewAction action="#{gestaoBancaDefesaBean.todasBancaDefesas}" />
+		</f:metadata>
+
+		<h:form id="frm">
+			<p:messages id="messages" />
+
+			<p:spacer height="20px" />
+
+			<p:toolbar id="toolbar">
+				<f:facet name="left">
+					<p:inputText id="termoPesquisa"
+						placeholder="Digite o título da Monografia..." size="30"
+						value="#{gestaoBancaDefesaBean.termoPesquisa}" />
+
+					<p:commandButton value="Pesquisar" icon="fa fa-search"
+						actionListener="#{gestaoBancaDefesaBean.pesquisar}"
+						update="bancaDefesasDataTable messages"
+						process="@this termoPesquisa" />
+
+					<span class="ui-separator"> <span
+						class="ui-icon ui-icon-grip-dotted-vertical" />
+					</span>
+
+					<p:commandButton value="Marcar banca" icon="fa fa-plus"
+						actionListener="#{gestaoBancaDefesaBean.prepararNovaBanca}"
+						oncomplete="PF('bancaDefesaDialogWidgetVar').show()"
+						update="bancaDefesaDialog" process="@this"
+						rendered="#{gestaoUsuariosBean.temPermissoes(['P', 'C'])}">
+						<p:resetInput target="bancaDefesaDialog" />
+					</p:commandButton>
+
+					<span class="ui-separator"> <span
+						class="ui-icon ui-icon-grip-dotted-vertical" />
+					</span>
+
+					<p:commandButton title="Editar" icon="fa fa-edit"
+						disabled="#{not gestaoBancaDefesaBean.bancaDefesaSeleciona}"
+						actionListener="#{gestaoBancaDefesaBean.prepararEdicao}"
+						oncomplete="PF('bancaDefesaDialogWidgetVar').show()"
+						update="bancaDefesaDialog" process="@this"
+						rendered="#{gestaoUsuariosBean.temPermissoes(['P', 'C'])}">
+						<p:resetInput target="bancaDefesaDialog" />
+					</p:commandButton>
+
+					<span class="ui-separator"> <span
+						class="ui-icon ui-icon-grip-dotted-vertical" />
+					</span>
+
+					<!-- <p:commandButton title="Exportar para o Excel"
+						icon="fa fa-file-excel-o" ajax="false">
+						<p:dataExporter type="xls" target="bancaDefesasDataTable"
+							fileName="BancasDefesa" />
+					</p:commandButton> -->
+				</f:facet>
+			</p:toolbar>
+
+			<p:spacer height="10px" />
+
+			<p:dataTable id="bancaDefesasDataTable"
+				value="#{gestaoBancaDefesaBean.listaBancaDefesas}" var="bancaDefesa"
+				emptyMessage="Nenhuma informação a ser exibida" paginator="true"
+				rows="8" paginatorPosition="bottom" selectionMode="single"
+				selection="#{gestaoBancaDefesaBean.bancaDefesa}"
+				rowKey="#{bancaDefesa.id}">
+
+				<p:ajax event="rowSelect" update="frm:toolbar" />
+
+				<p:ajax event="rowUnselect" update="frm:toolbar" />
+
+				<p:column headerText="Título da Monografia" sortBy="#{bancaDefesa.monografia.titulo}">
+					<h:outputText value="#{bancaDefesa.monografia.titulo}" />
+				</p:column>
+				
+				<p:column headerText="Aluno" sortBy="#{bancaDefesa.monografia.aluno.usuario.nome}">
+					<h:outputText value="#{bancaDefesa.monografia.aluno.usuario.nome}" />
+				</p:column>
+
+				<p:column headerText="Professor Orientador" sortBy="#{bancaDefesa.monografia.professor.usuario.nome}">
+					<h:outputText value="#{bancaDefesa.monografia.professor.usuario.nome}" />
+				</p:column>
+
+				<p:column headerText="Composição da banca">
+					<p:dataList value="#{bancaDefesa.listaProfessores}" var="professor">
+						<h:outputText value="#{professor.usuario.nome}"/>
+					</p:dataList>
+				</p:column>
+
+				
+				<p:column headerText="Local Defesa" sortBy="#{bancaDefesa.local}">
+					<h:outputText value="#{bancaDefesa.local}" />
+				</p:column>
+				
+				<p:column sortBy="#{bancaDefesa.dataDefesa}"
+					headerText="Data da Defesa">
+					<f:facet name="header"></f:facet>
+					<h:outputText value="#{bancaDefesa.dataDefesa}">
+						<f:convertDateTime pattern="dd/MM/yyyy" />
+					</h:outputText>
+				</p:column>
+
+			</p:dataTable>
+
+			<!-- Dialog de marcar banca de defesa -->
+			<p:dialog id="bancaDefesaDialog" header="Nova Banca de defesa"
+				widgetVar="bancaDefesaDialogWidgetVar" modal="true"
+				resizable="false" closeOnEscape="true">
+				<p:messages id="bancaDefesaMessages" />
+
+				<p:defaultCommand target="salvarCommandButton"
+					scope="bancaDefesaDialog" />
+
+				<h:panelGrid id="bancaDefesaPanelGrid" columns="2" 
+					rendered="#{gestaoBancaDefesaBean.bancaDefesa ne null}">
+
+					<p:outputLabel value="Título da Monografia: " for="tituloMonografia" />
+					<p:autoComplete id="tituloMonografia" size="100"
+						value="#{gestaoBancaDefesaBean.bancaDefesa.monografia}"
+						completeMethod="#{gestaoBancaDefesaBean.completarMonografia}"
+						var="monografia" itemLabel="#{monografia.titulo}"
+						itemValue="#{monografia}" forceSelection="true" groupBy="titulo" >
+						<o:converter converterId="omnifaces.ListConverter" list="#{gestaoBancaDefesaBean.listaMonografias}" />
+						<p:ajax event="itemSelect"
+							listener="#{gestaoBancaDefesaBean.handleSelect}"
+							update="aluno" />
+						<p:ajax event="itemSelect"
+							listener="#{gestaoBancaDefesaBean.handleSelect}" update="orientador" />
+					</p:autoComplete>
+
+					<p:outputLabel value="Aluno: " for="aluno" />
+					<p:autoComplete id="aluno" size="40"
+						value="#{gestaoBancaDefesaBean.bancaDefesa.monografia.aluno}"					
+						converter="omnifaces.SelectItemsConverter" var="aluno" readonly="true"
+						itemLabel="#{aluno.usuario.nome}" itemValue="#{aluno}">
+					</p:autoComplete>
+
+					<p:outputLabel value="Professor orientador: " for="orientador" />
+					<p:autoComplete id="orientador" size="40"
+						value="#{gestaoBancaDefesaBean.bancaDefesa.monografia.professor}"
+						completeMethod="#{gestaoMonografiasBean.completarProfessor}"
+						converter="omnifaces.SelectItemsConverter" readonly="true"
+						var="professor" itemLabel="#{professor.usuario.nome}"
+						itemValue="#{professor}" forceSelection="true" groupBy="nome">
+					</p:autoComplete>
+					
+					<p:outputLabel value="Composição da Banca: " for="composicao">
+						<p:autoComplete id="composicao" size="40" 
+						value="#{gestaoBancaDefesaBean.bancaDefesa.listaProfessores}"
+						completeMethod="#{gestaoMonografiasBean.completarProfessor}" multiple="true"
+						converter="#{gestaoMonografiasBean.professorConverter}" 
+						var="professor" itemLabel="#{professor.usuario.nome}"
+						itemValue="#{professor}" forceSelection="true" groupBy="nome"/>
+						
+					</p:outputLabel>
+
+					<p:outputLabel value="Local da defesa: " for="localDefesa" />
+					<p:inputText id="localDefesa" size="40" maxlength="120"
+						value="#{gestaoBancaDefesaBean.bancaDefesa.local}" />
+
+					<p:outputLabel value="Data da Defesa: " for="dataDefesa" />
+					<p:calendar id="dataDefesa" pattern="dd/MM/yyyy" size="10"
+						value="#{gestaoBancaDefesaBean.bancaDefesa.dataDefesa}" />
+
+					<h:outputLabel />
+					<p:commandButton id="salvarCommandButton" value="Cadastrar"
+						actionListener="#{gestaoBancaDefesaBean.salvar}"
+						update="bancaDefesaPanelGrid bancaDefesaMessages"
+						oncomplete="if (!args.validationFailed) PF('bancaDefesaDialogWidgetVar').hide()"
+						process="bancaDefesaDialog"/>
+				</h:panelGrid>
+			</p:dialog>
+		</h:form>
+	</ui:define>
+
+</ui:composition>

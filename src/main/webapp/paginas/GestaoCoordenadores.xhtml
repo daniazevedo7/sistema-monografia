@@ -1,0 +1,134 @@
+	<!DOCTYPE html>
+<ui:composition xmlns="http://www.w3.org/1999/xhtml"
+	xmlns:h="http://xmlns.jcp.org/jsf/html"
+	xmlns:f="http://xmlns.jcp.org/jsf/core"
+	xmlns:p="http://primefaces.org/ui"
+	xmlns:ui="http://xmlns.jcp.org/jsf/facelets"
+	template="/WEB-INF/template/Layout.xhtml">
+
+	<ui:define name="titulo">
+		<title>Gestão Coordenador</title>
+	</ui:define>
+	<ui:define name="conteudo">
+
+		<f:metadata>
+			<f:viewAction action="#{gestaoCoordenadoresBean.todosCoordenadores}" />
+		</f:metadata>
+
+		<h:form id="frm">
+			<p:messages id="messages" />
+
+			<p:spacer height="20px" />
+
+			<p:toolbar id="toolbar">
+				<f:facet name="left">
+					<p:inputText id="termoPesquisa"
+						placeholder="Digite aqui um termo para pesquisa..." size="30"
+						value="#{gestaoProfessoresBean.termoPesquisa}" />
+
+					<p:commandButton value="Pesquisar" icon="fa fa-search"
+						actionListener="#{gestaoProfessoresBean.pesquisar}"
+						update="coordenadoresDataTable messages" process="@this termoPesquisa" />
+
+					<span class="ui-separator"> <span
+						class="ui-icon ui-icon-grip-dotted-vertical" />
+					</span>
+
+					<p:commandButton value="Cadastrar Coordenador" icon="fa fa-plus"
+						actionListener="#{gestaoCoordenadoresBean.prepararNovoCoordenador}"
+						oncomplete="PF('coordenadorDialogWidgetVar').show()"
+						update="coordenadorDialog" process="@this"
+						rendered="#{gestaoUsuariosBean.temPermissoes(['C'])}">
+						<p:resetInput target="coordenadorDialog" />
+					</p:commandButton>
+
+					<span class="ui-separator"> <span
+						class="ui-icon ui-icon-grip-dotted-vertical" />
+					</span>
+
+					<p:commandButton title="Editar" icon="fa fa-edit"
+						disabled="#{not gestaoCoordenadoresBean.coordenadorSeleciona}"
+						actionListener="#{gestaoCoordenadoresBean.prepararEdicao}"
+						oncomplete="PF('coordenadorDialogWidgetVar').show()"
+						update="coordenadorDialog" process="@this"
+						rendered="#{gestaoUsuariosBean.temPermissoes(['C'])}">
+						<p:resetInput target="professorDialog" />
+					</p:commandButton>
+
+					<span class="ui-separator"> <span
+						class="ui-icon ui-icon-grip-dotted-vertical" />
+					</span>
+
+					<!-- <p:commandButton title="Exportar para o Excel"
+						icon="fa fa-file-excel-o" ajax="false">
+						<p:dataExporter type="xls" target="professoresDataTable"
+							fileName="Professores" />
+					</p:commandButton> -->
+				</f:facet>
+			</p:toolbar>
+
+			<p:spacer height="10px" />
+
+			<p:dataTable id="coordenadoresDataTable"
+				value="#{gestaoCoordenadoresBean.listaCoordenadores}" var="coordenador"
+				emptyMessage="Nenhuma informação a ser exibida" paginator="true"
+				rows="10" paginatorPosition="bottom" selectionMode="single"
+				selection="#{gestaoCoordenadoresBean.coordenador}" rowKey="#{coordenador.id}">
+
+				<p:ajax event="rowSelect" update="frm:toolbar" />
+
+				<p:ajax event="rowUnselect" update="frm:toolbar" />
+
+				<p:column headerText="Coordenador">
+					<h:outputText value="#{coordenador.usuario.nome}" />
+				</p:column>
+
+				<p:column headerText="Matricula">
+					<h:outputText value="#{coordenador.usuario.matricula}" />
+				</p:column>
+
+				<p:column headerText="E-mail">
+					<h:outputText value="#{coordenador.usuario.email}" />
+				</p:column>
+			</p:dataTable>
+			
+			<!-- Dialog Novo Coordenador -->
+			<p:dialog id="coordenadorDialog" header="Cadastrar coordenador"
+				widgetVar="coordenadorDialogWidgetVar" modal="true" resizable="false"
+				closeOnEscape="true">
+				<p:messages id="coordenadorMessages" />
+
+				<p:defaultCommand target="salvarCommandButton" scope="coordenadorDialog" />
+
+				<h:panelGrid id="coordenadorPanelGrid" columns="2"
+					rendered="#{gestaoCoordenadoresBean.coordenador ne null}">
+
+
+					<p:outputLabel value="Nome: " for="nome" />
+					<p:inputText id="nome" size="80" maxlength="120"
+						value="#{gestaoCoordenadoresBean.coordenador.usuario.nome}" />
+
+					<p:outputLabel value="Matricula " for="matricula" />
+					<p:inputText id="matricula" size="10" maxlength="8"
+						value="#{gestaoCoordenadoresBean.coordenador.usuario.matricula}" />
+
+				<!-- 	<p:outputLabel value="Senha " for="senha" />
+					<p:password id="senha" size="10" maxlength="8"
+						value="#{gestaoCoordenadoresBean.coordenador.usuario.senha}" /> -->
+
+					<p:outputLabel value="E-mail " for="email" />
+					<p:inputText id="email" size="80" maxlength="80"
+						value="#{gestaoCoordenadoresBean.coordenador.usuario.email}" />
+
+					<h:outputLabel />
+					<p:commandButton id="salvarCommandButton" value="Salvar"
+						actionListener="#{gestaoCoordenadoresBean.salvar}"
+						update="coordenadorPanelGrid coordenadorMessages"
+						oncomplete="if (!args.validationFailed) PF('coordenadorDialogWidgetVar').hide()"
+						process="coordenadorDialog" />
+				</h:panelGrid>
+			</p:dialog>
+		</h:form>
+	</ui:define>
+
+</ui:composition>

@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<ui:composition xmlns="http://www.w3.org/1999/xhtml"
+	xmlns:h="http://xmlns.jcp.org/jsf/html"
+	xmlns:f="http://xmlns.jcp.org/jsf/core"
+	xmlns:p="http://primefaces.org/ui"
+	xmlns:ui="http://xmlns.jcp.org/jsf/facelets"
+	template="/WEB-INF/template/Layout.xhtml">
+
+	<ui:define name="titulo">
+		<title>Gestão Artigos</title>
+	</ui:define>
+	<ui:define name="conteudo">
+
+		<f:metadata>
+			<f:viewAction action="#{gestaoArtigosBean.todosArtigos}" />
+		</f:metadata>
+
+		<h:form id="frm">
+			<p:messages id="messages" />
+
+			<p:spacer height="20px" />
+
+			<p:toolbar id="toolbar">
+				<f:facet name="left">
+					<p:inputText id="termoPesquisa"
+						placeholder="Digite aqui um termo para pesquisa..." size="30"
+						value="#{gestaoArtigosBean.termoPesquisa}" />
+
+					<p:commandButton value="Pesquisar" icon="fa fa-search"
+						actionListener="#{gestaoArtigosBean.pesquisar}"
+						update="artigosDataTable messages" process="@this termoPesquisa" />
+
+					<span class="ui-separator"> <span
+						class="ui-icon ui-icon-grip-dotted-vertical" />
+					</span>
+
+					<p:commandButton value="Publicar Artigo" icon="fa fa-plus"
+						actionListener="#{gestaoArtigosBean.prepararNovoArtigo}"
+						oncomplete="PF('artigoDialogWidgetVar').show()"
+						update="artigoDialog" process="@this"
+						rendered="#{gestaoUsuariosBean.temPermissoes(['P', 'C'])}">
+						<p:resetInput target="artigoDialog" />
+					</p:commandButton>
+
+					<span class="ui-separator"> <span
+						class="ui-icon ui-icon-grip-dotted-vertical" />
+					</span>
+
+					<p:commandButton title="Editar" icon="fa fa-edit"
+						disabled="#{not gestaoArtigosBean.artigoSeleciona}"
+						actionListener="#{gestaoArtigosBean.prepararEdicao}"
+						oncomplete="PF('artigoDialogWidgetVar').show()"
+						update="artigoDialog" process="@this"
+						rendered="#{gestaoUsuariosBean.temPermissoes(['P', 'C'])}">
+						<p:resetInput target="artigoDialog" />
+					</p:commandButton>
+
+					<p:commandButton title="Upload" icon="fa fa-file-pdf-o"
+						disabled="#{not gestaoArtigosBean.artigoSeleciona}"
+						actionListener="#{gestaoArtigosBean.prepararEdicao}"
+						oncomplete="PF('uploadDialogWidgetVar').show()"
+						update="uploadDialog" process="@this"
+						rendered="#{gestaoUsuariosBean.temPermissoes(['P', 'C'])}">
+						<p:resetInput target="uploadDialog" />
+					</p:commandButton>
+				</f:facet>
+			</p:toolbar>
+
+			<p:spacer height="10px" />
+
+			<p:dataTable id="artigosDataTable"
+				value="#{gestaoArtigosBean.listaArtigos}" var="artigo"
+				emptyMessage="Nenhuma informação a ser exibida" paginator="true"
+				rows="10" paginatorPosition="bottom" selectionMode="single"
+				selection="#{gestaoArtigosBean.artigo}" rowKey="#{artigo.id}">
+
+				<p:ajax event="rowSelect" update="frm:toolbar" />
+
+				<p:ajax event="rowUnselect" update="frm:toolbar" />
+
+				<p:column headerText="Titulo" sortBy="#{artigo.titulo}">
+					<h:outputText value="#{artigo.titulo}" />
+				</p:column>
+				
+				<p:column headerText="Descrição do Artigo">
+					<h:outputText value="#{artigo.descricao}" />
+				</p:column>
+
+				<p:column headerText="Data da publicação">
+					<h:outputText value="#{artigo.dataPublicacao}">
+						<f:convertDateTime pattern="dd/MM/yyyy" />
+					</h:outputText>
+				</p:column>
+
+				<p:column headerText="Projeto Baseado">
+					<h:outputText value="#{artigo.projeto.titulo}" />
+				</p:column>
+				
+				
+				<p:column headerText="Monografia Baseada">
+					<h:outputText value="#{artigo.monografia.titulo}" />
+				</p:column>
+
+				<p:column filterBy="#{artigo.listaLinhaPesquisas[0].nome}"  headerText="Linha de Pesquisa">
+					<f:facet name="filter">
+					<p:selectOneMenu onchange="PF('artigoTable').filter()" >
+						<f:selectItem  itemLabel="Selecione..." itemValue="#{null}" noSelectionOption="true"/>
+						<f:selectItems value="#{gestaoArtigosBean.listaLinhaPesquisas}"
+						    var="linhaPesquisa" itemLabel="#{linhaPesquisa.nome}"
+							itemValue="#{linhaPesquisa.nome}" />
+					</p:selectOneMenu>
+					</f:facet>
+					<p:dataList value="#{artigo.listaLinhaPesquisas}" var="linhaPesquisa">
+						#{linhaPesquisa.nome}
+					</p:dataList>
+				</p:column> 
+				
+				<p:column headerText="Download">
+					<p:commandButton immediate="true" value="Download" ajax="false"
+						onclick="PrimeFaces.monitorDownload(start, stop);"
+						icon="ui-icon-arrowthick-1-s">
+						<p:fileDownload value="#{gestaoArtigosBean.file}" />
+					</p:commandButton>
+				</p:column>
+
+			</p:dataTable>
+
+			<!-- Dialog do cadastro de artigo -->
+			<p:dialog id="artigoDialog" header="Novo Artigo"
+				widgetVar="artigoDialogWidgetVar" modal="true" resizable="false"
+				closeOnEscape="true">
+				<p:messages id="artigoMessages" />
+
+				<p:defaultCommand target="salvarCommandButton" scope="artigoDialog" />
+
+				<h:panelGrid id="artigoPanelGrid" columns="2"
+					rendered="#{gestaoArtigosBean.artigo ne null}">
+
+					<p:outputLabel value="Título: " for="titulo" />
+					<p:inputText id="titulo" size="80" maxlength="120"
+						value="#{gestaoArtigosBean.artigo.titulo}" />
+
+					<p:outputLabel value="Projeto Baseado" for="projeto" />
+					<p:selectOneMenu id="projeto"
+						converter="omnifaces.SelectItemsConverter"
+						value="#{gestaoArtigosBean.artigo.projeto}" 
+						filter="true">
+						<f:selectItem itemLabel="Selecione..." noSelectionOption="true" />
+						<f:selectItems value="#{gestaoArtigosBean.listaProjetos}"
+							var="projeto" itemLabel="#{projeto.titulo}"
+							itemValue="#{projeto}" />
+					</p:selectOneMenu>
+
+					<p:outputLabel value="Monografia Baseada" for="monografia" />
+					<p:selectOneMenu id="monografia"
+						converter="omnifaces.SelectItemsConverter"
+						value="#{gestaoArtigosBean.artigo.monografia}" filter="true">
+						<f:selectItem itemLabel="Selecione..." noSelectionOption="true" />
+						<f:selectItems value="#{gestaoArtigosBean.listaMonografias}"
+							var="monografia" itemLabel="#{monografia.titulo}"
+							itemValue="monografia" />
+					</p:selectOneMenu>
+
+					<p:outputLabel value="Linha de Pesquisa: " for="linhaPesquisa" />
+					<p:selectCheckboxMenu id="linhaPesquisa" 
+						converter="omnifaces.SelectItemsConverter"
+						value="#{gestaoArtigosBean.artigo.listaLinhaPesquisas}"
+						required="true" filter="true">
+						<f:attribute name="collectionType" value="java.util.ArrayList" />
+						<f:selectItems
+							value="#{gestaoArtigosBean.listaLinhaPesquisas}"
+							var="linhaPesquisas" itemLabel="#{linhaPesquisas.nome}"
+							itemValue="#{linhaPesquisas}" />
+					</p:selectCheckboxMenu>
+
+					<p:outputLabel value="Data da publicação: " for="dataPublicacao" />
+					<p:calendar id="dataPublicacao" pattern="dd/MM/yyyy" size="20"
+						value="#{gestaoArtigosBean.artigo.dataPublicacao}" />
+						
+						<p:outputLabel value="Descição do Artigo: " for="descricao" />
+					<p:inputTextarea id="descricao" rows="10" cols="50"
+						autoResize="true" value="#{gestaoArtigosBean.artigo.descricao}" />
+
+
+					<h:outputLabel />
+					<p:commandButton id="salvarCommandButton" value="Cadastrar"
+						actionListener="#{gestaoArtigosBean.salvar}"
+						update="artigoPanelGrid artigoMessages"
+						oncomplete="if (!args.validationFailed) PF('artigoDialogWidgetVar').hide()"
+						process="artigoDialog" />
+				</h:panelGrid>
+			</p:dialog>
+			
+			<!-- Dialog de upload de arquivo-->
+			<p:dialog id="uploadDialog" header="Upload de arquivo"
+				widgetVar="uploadDialogWidgetVar" modal="true" resizable="false"
+				closeOnEscape="true">
+				<p:messages id="uploadMessages" />
+
+				<p:defaultCommand target="uploadCommandButton" scope="uploadDialog" />
+
+				<h:panelGrid id="uploadPanelGrid" columns="2"
+					rendered="#{gestaoArtigosBean.artigo ne null}">
+
+					<p:outputLabel value="Título do Artigo: "
+						for="titulo" />
+					<p:inputText size="80" maxlength="120"
+						value="#{gestaoArtigosBean.artigo.titulo}" />
+
+					<p:fileUpload label="Upload"
+						fileUploadListener="#{gestaoArtigosBean.upload}"
+						mode="advanced" update="messages" auto="true"
+						allowTypes="/(\.|\/)(pdf)$/" />
+
+					<p:growl id="uploadmessages" showDetail="true" />
+
+					<h:outputLabel />
+					<p:commandButton id="uploadCommandButton" value="Salvar"
+						actionListener="#{gestaoArtigosBean.salvar}"
+						update="uploadPanelGrid artigoMessages"
+						oncomplete="if (!args.validationFailed) PF('uploadDialogWidgetVar').hide()"
+						process="uploadDialog" />
+				</h:panelGrid>
+			</p:dialog>
+		</h:form>
+	</ui:define>
+
+</ui:composition>

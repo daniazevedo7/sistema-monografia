@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<ui:composition xmlns="http://www.w3.org/1999/xhtml"
+	xmlns:h="http://xmlns.jcp.org/jsf/html"
+	xmlns:f="http://xmlns.jcp.org/jsf/core"
+	xmlns:p="http://primefaces.org/ui"
+	xmlns:ui="http://xmlns.jcp.org/jsf/facelets"
+	xmlns:o="http://omnifaces.org/ui"
+	template="/WEB-INF/template/Layout.xhtml">
+
+	<ui:define name="titulo">
+		<title>Gestão Monografias</title>
+	</ui:define>
+	<ui:define name="conteudo">
+
+		<f:metadata>
+			<f:viewAction action="#{gestaoMonografiasBean.todasMonografias}" />
+		</f:metadata>
+
+		<h:form id="frm" enctype="multipart/form-data">
+			<p:messages id="messages" />
+
+			<p:spacer height="20px" />
+
+			<p:toolbar id="toolbar">
+				<f:facet name="left">
+					<p:inputText id="termoPesquisa"
+						placeholder="Digite o título da Monografia..." size="30"
+						value="#{gestaoMonografiasBean.termoPesquisa}" />
+
+					<p:commandButton value="Pesquisar" icon="fa fa-search"
+						actionListener="#{gestaoMonografiasBean.pesquisar}"
+						update="monografiasDataTable messages"
+						process="@this termoPesquisa" />
+
+					<span class="ui-separator"> <span
+						class="ui-icon ui-icon-grip-dotted-vertical" />
+					</span>
+
+					<p:commandButton value="Nova Monografia" icon="fa fa-plus"
+						actionListener="#{gestaoMonografiasBean.prepararNovaMonografia}"
+						oncomplete="PF('monografiaDialogWidgetVar').show()"
+						update="monografiaDialog" process="@this"
+						rendered="#{gestaoUsuariosBean.temPermissoes(['P', 'C'])}">
+						<p:resetInput target="monografiaDialog" />
+					</p:commandButton>
+
+					<span class="ui-separator"> <span
+						class="ui-icon ui-icon-grip-dotted-vertical" />
+					</span>
+
+					<p:commandButton value="Lançar Nota" icon="fa fa-plus"
+						disabled="#{not gestaoMonografiasBean.monografiaSeleciona}"
+						actionListener="#{gestaoMonografiasBean.prepararEdicao}"
+						oncomplete="PF('lancarDialogWidgetVar').show()"
+						update="lancarDialog" process="@this"
+						rendered="#{gestaoUsuariosBean.temPermissoes(['P'])}">
+						<p:resetInput target="lancarDialog" />
+					</p:commandButton>
+
+					<span class="ui-separator"> <span
+						class="ui-icon ui-icon-grip-dotted-vertical" />
+					</span>
+
+					<p:commandButton value="Convidar orientador" icon="fa fa-plus"
+						oncomplete="PF('conviteDialogWidgetVar').show()"
+						update="conviteDialog" process="@this"
+						rendered="#{gestaoUsuariosBean.temPermissoes(['A'])}">
+						<p:resetInput target="conviteDialog" />
+					</p:commandButton>
+
+					<span class="ui-separator"> <span
+						class="ui-icon ui-icon-grip-dotted-vertical" />
+					</span>
+
+					<p:commandButton title="Editar" icon="fa fa-edit"
+						disabled="#{not gestaoMonografiasBean.monografiaSeleciona}"
+						actionListener="#{gestaoMonografiasBean.prepararEdicao}"
+						oncomplete="PF('monografiaDialogWidgetVar').show()"
+						update="monografiaDialog" process="@this"
+						rendered="#{gestaoUsuariosBean.temPermissoes(['P', 'C'])}">
+						<p:resetInput target="monografiaDialog" />
+					</p:commandButton>
+
+					<p:commandButton title="Upload" icon="fa fa-file-pdf-o"
+						disabled="#{not gestaoMonografiasBean.monografiaSeleciona}"
+						actionListener="#{gestaoMonografiasBean.prepararEdicao}"
+						oncomplete="PF('uploadDialogWidgetVar').show()"
+						update="uploadDialog" process="@this"
+						rendered="#{gestaoUsuariosBean.temPermissoes(['P', 'C', 'D'])}">
+						<p:resetInput target="uploadDialog" />
+					</p:commandButton>
+
+					<!-- 	<span class="ui-separator"> <span
+						class="ui-icon ui-icon-grip-dotted-vertical" />
+					</span>
+
+					<p:commandButton title="Exportar para o Excel"
+						icon="fa fa-file-excel-o" ajax="false">
+						<p:dataExporter type="xls" target="monografiasDataTable"
+							fileName="Monografias" />
+					</p:commandButton> -->
+				</f:facet>
+			</p:toolbar>
+
+			<p:spacer height="10px" />
+
+			<p:dataTable id="monografiasDataTable" widgetVar="monografiaTable"
+				value="#{gestaoMonografiasBean.listaMonografias}" var="monografia"
+				emptyMessage="Nenhuma informação a ser exibida" paginator="true"
+				rows="8" paginatorPosition="bottom" selectionMode="single"
+				selection="#{gestaoMonografiasBean.monografia}"
+				rowKey="#{monografia.id}">
+
+				<p:ajax event="rowSelect" update="frm:toolbar" />
+
+				<p:ajax event="rowUnselect" update="frm:toolbar" />
+
+
+				<p:column headerText="Título">
+					<h:outputText value="#{monografia.titulo}" />
+				</p:column>
+
+				<p:column headerText="Aluno">
+					<h:outputText value="#{monografia.aluno.usuario.nome}" />
+				</p:column>
+
+				<p:column headerText="Orientador">
+					<h:outputText value="#{monografia.professor.usuario.nome}" />
+				</p:column>
+
+				<!--  <p:column filterBy="#{monografia.listaLinhaPesquisas[0].nome}" headerText="Linha de Pesquisa">
+					<f:facet name="filter" >
+						<p:selectCheckboxMenu value="#{gestaoMonografiasBean.listaLinhaPesquisasFiltradas}" label="Selecione"
+						 onchange="PF('monografiaTable').filter()" converter="omnifaces.SelectItemsConverter" filter="true" >	
+							<f:selectItems
+								value="#{gestaoMonografiasBean.listaLinhaPesquisas}"
+								var="linhaPesquisa" itemLabel="#{linhaPesquisa.nome}"
+								itemValue="#{linhaPesquisa.nome}"/>
+								<p:ajax event="toggleSelect"  process="@this" partialSubmit="true" />
+						</p:selectCheckboxMenu>
+					</f:facet>
+					<p:dataList value="#{monografia.listaLinhaPesquisas}" var="linhaPesquisa">
+						<h:outputText value="#{linhaPesquisa.nome}"/>
+					</p:dataList>
+					<h:outputText value="#{monografia.listaLinhaPesquisas[0].nome}"/>
+				</p:column>      -->
+
+
+				<p:column filterBy="#{monografia.listaLinhaPesquisas[0].nome}"
+					headerText="Linha de Pesquisa">
+					<f:facet name="filter">
+						<p:selectOneMenu onchange="PF('monografiaTable').filter()">
+							<f:selectItem itemLabel="Selecione..." itemValue="#{null}"
+								noSelectionOption="true" />
+							<f:selectItems
+								value="#{gestaoMonografiasBean.listaLinhaPesquisas}"
+								var="linhaPesquisa" itemLabel="#{linhaPesquisa.nome}"
+								itemValue="#{linhaPesquisa.nome}" />
+						</p:selectOneMenu>
+					</f:facet>
+					<p:dataList value="#{monografia.listaLinhaPesquisas}"
+						var="linhaPesquisa">
+						<h:outputText value="#{linhaPesquisa.nome}" />
+					</p:dataList>
+				</p:column>
+
+				<!-- <p:column filterBy="#{monografia.listaLinhaPesquisas[0].nome}"
+					headerText="Linha de Pesquisa">
+					<h:outputText value="#{monografia.listaLinhaPesquisas[0].nome}" />
+				</p:column> -->
+
+				<p:column filterBy="#{monografia.defendida}" headerText="Defendida">
+					<f:facet name="filter">
+						<p:selectOneButton onchange="PF('monografiaTable').filter()">
+							<f:converter converterId="javax.faces.Boolean" />
+							<f:selectItem itemLabel="Todas" itemValue="" />
+							<f:selectItem itemLabel="Sim" itemValue="true" />
+							<f:selectItem itemLabel="Não" itemValue="false" />
+						</p:selectOneButton>
+					</f:facet>
+					<h:outputText value="#{monografia.defendida ? 'Sim': 'Não'}" />
+				</p:column>
+
+				<p:column headerText="Nota">
+					<h:outputText value="#{monografia.nota}" />
+				</p:column>
+
+				<p:column headerText="Download">
+					<p:commandButton immediate="true" value="Download" ajax="false"
+						onclick="PrimeFaces.monitorDownload(start, stop);"
+						icon="ui-icon-arrowthick-1-s">
+						<p:fileDownload value="#{gestaoMonografiasBean.file}" />
+					</p:commandButton>
+				</p:column>
+			</p:dataTable>
+
+			<!-- Dialog de nova monografia -->
+			<p:dialog id="monografiaDialog" header="Nova monografia"
+				widgetVar="monografiaDialogWidgetVar" modal="true" resizable="false"
+				closeOnEscape="true">
+				<p:messages id="monografiaMessages" />
+
+				<p:defaultCommand target="salvarCommandButton"
+					scope="monografiaDialog" />
+
+				<h:panelGrid id="monografiaPanelGrid" columns="2"
+					rendered="#{gestaoMonografiasBean.monografia ne null}">
+
+					<p:outputLabel value="Título: " for="titulo" />
+					<p:inputText id="titulo" size="80" maxlength="120"
+						value="#{gestaoMonografiasBean.monografia.titulo}" />
+
+					<p:outputLabel value="Linha de Pesquisa: " for="linhaPesquisa" />
+					<p:selectCheckboxMenu id="linhaPesquisa"
+						converter="omnifaces.SelectItemsConverter"
+						value="#{gestaoMonografiasBean.monografia.listaLinhaPesquisas}"
+						required="true" filter="true">
+						<f:attribute name="collectionType" value="java.util.ArrayList" />
+						<f:selectItems
+							value="#{gestaoMonografiasBean.listaLinhaPesquisas}"
+							var="linhaPesquisas" itemLabel="#{linhaPesquisas.nome}"
+							itemValue="#{linhaPesquisas}" />
+					</p:selectCheckboxMenu>
+
+					<p:outputLabel value="Professor orientador: " for="orientador" />
+					<p:autoComplete id="orientador" size="80"
+						value="#{gestaoMonografiasBean.monografia.professor}"
+						completeMethod="#{gestaoMonografiasBean.completarProfessor}"
+						converter="#{gestaoMonografiasBean.professorConverter}"
+						var="professor" itemLabel="#{professor.usuario.nome}"
+						itemValue="#{professor}" forceSelection="true" groupBy="nome">
+					</p:autoComplete>
+
+					<p:outputLabel value="Aluno: " for="aluno" />
+					<p:autoComplete id="aluno" size="80"
+						value="#{gestaoMonografiasBean.monografia.aluno}"
+						completeMethod="#{gestaoMonografiasBean.completarAluno}"
+						converter="#{gestaoMonografiasBean.alunoConverter}" var="aluno"
+						itemLabel="#{aluno.usuario.nome}" itemValue="#{aluno}">
+						<!-- <p:ajax event="itemSelect"
+							listener="#{gestaoMonografiasBean.handleSelect}"
+							update="matricula" />
+						<p:ajax event="itemSelect"
+							listener="#{gestaoMonografiasBean.handleSelect}" update="email" /> -->
+					</p:autoComplete>
+
+					<!-- <p:outputLabel value="Matrícula " for="matricula" />
+					<p:inputText id="matricula" size="20" maxlength="8"
+						value="#{gestaoMonografiasBean.aluno.usuario.matricula}"
+						readonly="true">
+						<p:ajax event="change" process="@this" />
+					</p:inputText>
+
+
+					<p:outputLabel value="E-mail " for="email" />
+					<p:inputText id="email" size="50" maxlength="80"
+						value="#{gestaoMonografiasBean.aluno.usuario.email}"
+						readonly="true">
+						<p:ajax event="change" process="@this" />
+					</p:inputText> -->
+
+					<h:outputLabel />
+					<p:commandButton id="salvarCommandButton" value="Salvar"
+						actionListener="#{gestaoMonografiasBean.salvar}"
+						update="monografiaPanelGrid monografiaMessages"
+						oncomplete="if (!args.validationFailed) PF('monografiaDialogWidgetVar').hide()"
+						process="monografiaDialog" />
+				</h:panelGrid>
+			</p:dialog>
+
+			<!-- Dialog de lançar nota-->
+			<p:dialog id="lancarDialog" header="Lançar Nota"
+				widgetVar="lancarDialogWidgetVar" modal="true" resizable="false"
+				closeOnEscape="true">
+				<p:messages id="lancarMessages" />
+
+				<p:defaultCommand target="salvarNotaCommandButton"
+					scope="lancarDialog" />
+
+				<h:panelGrid id="lancarPanelGrid" columns="2"
+					rendered="#{gestaoMonografiasBean.monografia ne null}">
+
+					<p:outputLabel value="Título da Monografia: "
+						for="tituloMonografia" />
+					<p:inputText id="tituloMonografia" size="80" maxlength="120"
+						value="#{gestaoMonografiasBean.monografia.titulo}" />
+
+					<p:outputLabel value="Aluno: " for="alunoProjeto" />
+					<p:inputText id="alunoProjeto" size="40" maxlength="80"
+						value="#{gestaoMonografiasBean.monografia.aluno.usuario.nome}" />
+
+					<p:outputLabel value="Lançar Nota " for="lancarNota" />
+					<p:inputText id="lancarNota" size="10" maxlength="5"
+						value="#{gestaoMonografiasBean.monografia.nota}" />
+
+					<!-- <p:outputLabel value="Defendida:" />
+					<p:selectBooleanCheckbox
+						value="#{gestaoMonografiasBean.monografia.defendida}"
+						disabled="true" /> -->
+
+					<h:outputLabel />
+					<p:commandButton id="salvarNotaCommandButton" value="lançar Nota"
+						actionListener="#{gestaoMonografiasBean.lancarNota}"
+						update="lancarPanelGrid monografiaMessages"
+						oncomplete="if (!args.validationFailed) PF('lancarDialogWidgetVar').hide()"
+						process="lancarDialog" />
+				</h:panelGrid>
+			</p:dialog>
+
+			<!-- Dialog de convidar orientador-->
+			<p:dialog id="conviteDialog" header="Convidar orientador"
+				widgetVar="conviteDialogWidgetVar" modal="true" resizable="false"
+				closeOnEscape="true">
+				<p:messages id="conviteMessages" />
+
+				<p:defaultCommand target="salvarCommandButton" 
+				scope="conviteDialog" />
+
+				<h:panelGrid id="convitePanelGrid" columns="2"
+					rendered="#{gestaoUsuariosBean.usuario ne null}">
+
+					<p:outputLabel value="Assunto: " for="assunto" />
+					<p:inputText id="assunto" size="80" maxlength="120" required="true" requiredMessage="Campo Assunto obrigatório"
+						value="#{gestaoMonografiasBean.usuario.assunto}" />
+
+					<p:outputLabel value="Professor: " for="professorConvite" />
+					<p:autoComplete id="professorConvite" size="80"
+						value="#{gestaoMonografiasBean.professor}"
+						completeMethod="#{gestaoMonografiasBean.completarProfessor}"
+						converter="#{gestaoMonografiasBean.professorConverter}"
+						var="professor" itemLabel="#{professor.usuario.nome}"
+						itemValue="#{professor}" forceSelection="true" groupBy="nome"
+						required="true" requiredMessage="Campo Professor obrigatório">
+						<p:ajax event="itemSelect"
+							listener="#{gestaoMonografiasBean.handleSelect}"
+							update="emailProfessor" />
+					</p:autoComplete>
+
+					<p:outputLabel value="E-mail do Professor: " for="emailProfessor" />
+					<p:inputText id="emailProfessor" size="80" maxlength="80" readonly="true"
+					required="true" requiredMessage="Campo E-mail obrigatório"
+						value="#{gestaoMonografiasBean.professor.usuario.email}">
+						<p:ajax event="change" process="@this" />
+					</p:inputText>
+
+					<p:outputLabel value="Mensagem para o professor: "
+						for="descricaoProjeto" />
+					<p:inputTextarea id="descricaoProjeto" rows="10" cols="50" required="true" requiredMessage="Campo Mensagem obrigatório"
+						autoResize="true" value="#{gestaoMonografiasBean.usuario.mensagem}" />
+
+					<p:blockUI block="frm" trigger="enviarEmailCommandButton">
+						<p:graphicImage library="sistema" name="gif-load.gif" />
+					</p:blockUI>
+
+					<h:outputLabel />
+					<p:commandButton id="enviarEmailCommandButton"
+						value="Enviar Convite"
+						actionListener="#{gestaoMonografiasBean.enviarEmailProfessor}"
+						update="convitePanelGrid conviteMessages"
+						oncomplete="if (!args.validationFailed) PF('conviteDialogWidgetVar').hide()"
+						process="conviteDialog" />
+				</h:panelGrid>
+			</p:dialog>
+
+			<!-- Dialog de upload de arquivo-->
+			<p:dialog id="uploadDialog" header="Upload de arquivo"
+				widgetVar="uploadDialogWidgetVar" modal="true" resizable="false"
+				closeOnEscape="true">
+				<p:messages id="uploadMessages" />
+
+				<p:defaultCommand target="uploadCommandButton" scope="uploadDialog" />
+
+				<h:panelGrid id="uploadPanelGrid" columns="2"
+					rendered="#{gestaoMonografiasBean.monografia ne null}">
+
+					<p:outputLabel value="Título da Monografia: "
+						for="tituloMonografia" />
+					<p:inputText size="80" maxlength="120"
+						value="#{gestaoMonografiasBean.monografia.titulo}" />
+
+					<p:fileUpload label="Upload"
+						fileUploadListener="#{gestaoMonografiasBean.upload}"
+						mode="advanced" update="messages" auto="true"
+						allowTypes="/(\.|\/)(pdf)$/" />
+
+					<p:growl id="uploadmessages" showDetail="true" />
+
+					<h:outputLabel />
+					<p:commandButton id="uploadCommandButton" value="Salvar"
+						actionListener="#{gestaoMonografiasBean.salvar}"
+						update="uploadPanelGrid monografiaMessages"
+						oncomplete="if (!args.validationFailed) PF('uploadDialogWidgetVar').hide()"
+						process="uploadDialog" />
+				</h:panelGrid>
+			</p:dialog>
+		</h:form>
+	</ui:define>
+
+</ui:composition>

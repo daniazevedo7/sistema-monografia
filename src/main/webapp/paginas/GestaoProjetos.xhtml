@@ -1,0 +1,417 @@
+<!DOCTYPE html>
+<ui:composition xmlns="http://www.w3.org/1999/xhtml"
+	xmlns:h="http://xmlns.jcp.org/jsf/html"
+	xmlns:f="http://xmlns.jcp.org/jsf/core"
+	xmlns:p="http://primefaces.org/ui"
+	xmlns:ui="http://xmlns.jcp.org/jsf/facelets"
+	xmlns:o="http://omnifaces.org/ui"
+	template="/WEB-INF/template/Layout.xhtml">
+
+	<ui:define name="titulo">
+		<title>Gestão Projetos</title>
+	</ui:define>
+	<ui:define name="conteudo">
+
+		<f:metadata>
+			<f:viewAction action="#{gestaoProjetosBean.todosProjetos}" />
+		</f:metadata>
+
+		<h:form id="frm">
+			<p:messages id="messages" />
+
+			<p:spacer height="20px" />
+
+			<p:toolbar id="toolbar">
+				<f:facet name="left">
+					<p:inputText id="termoPesquisa"
+						placeholder="Digite aqui um termo para pesquisa..." size="30"
+						value="#{gestaoProjetosBean.termoPesquisa}" />
+
+					<p:commandButton value="Pesquisar" icon="fa fa-search"
+						actionListener="#{gestaoProjetosBean.pesquisar}"
+						update="projetosDataTable messages" process="@this termoPesquisa" />
+
+					<span class="ui-separator"> <span
+						class="ui-icon ui-icon-grip-dotted-vertical" />
+					</span>
+
+					<p:commandButton value="Cadastrar Projeto" icon="fa fa-plus"
+						actionListener="#{gestaoProjetosBean.prepararNovoProjeto}"
+						oncomplete="PF('projetoDialogWidgetVar').show()"
+						update="projetoDialog" process="@this"
+						rendered="#{gestaoUsuariosBean.temPermissoes(['P', 'C'])}">
+						<p:resetInput target="projetoDialog" />
+					</p:commandButton>
+
+					<span class="ui-separator"> <span
+						class="ui-icon ui-icon-grip-dotted-vertical" />
+					</span>
+
+					<p:commandButton value="Associar Vaga" icon="fa fa-plus"
+						disabled="#{not gestaoProjetosBean.projetoSeleciona}"
+						actionListener="#{gestaoProjetosBean.prepararEdicao}"
+						oncomplete="PF('associarDialogWidgetVar').show()"
+						update="associarDialog" process="@this"
+						rendered="#{gestaoUsuariosBean.temPermissoes(['P'])}">
+						<p:resetInput target="associarDialog" />
+					</p:commandButton>
+
+					<span class="ui-separator"> <span
+						class="ui-icon ui-icon-grip-dotted-vertical" />
+					</span>
+
+					<p:commandButton value="Divulgar Projetos" icon="fa fa-plus"
+						oncomplete="PF('conviteDialogWidgetVar').show()"
+						update="conviteDialog" process="@this"
+						rendered="#{gestaoUsuariosBean.temPermissoes(['P', 'C'])}">
+						<p:resetInput target="conviteDialog" />
+					</p:commandButton>
+
+					<p:commandButton value="Manifestar Interesse em Projeto"
+						icon="fa fa-plus"
+						oncomplete="PF('solicitarDialogWidgetVar').show()"
+						update="solicitarDialog" process="@this"
+						rendered="#{gestaoUsuariosBean.temPermissoes(['A'])}">
+						<p:resetInput target="solicitarDialog" />
+					</p:commandButton>
+
+					<span class="ui-separator"> <span
+						class="ui-icon ui-icon-grip-dotted-vertical" />
+					</span>
+
+					<p:commandButton title="Editar" icon="fa fa-edit"
+						disabled="#{not gestaoProjetosBean.projetoSeleciona}"
+						actionListener="#{gestaoProjetosBean.prepararEdicao}"
+						oncomplete="PF('projetoDialogWidgetVar').show()"
+						update="projetoDialog" process="@this"
+						rendered="#{gestaoUsuariosBean.temPermissoes(['P', 'C'])}">
+						<p:resetInput target="projetoDialog" />
+					</p:commandButton>
+					
+					<p:commandButton title="Upload"  icon="fa fa-file-pdf-o"
+						disabled="#{not gestaoProjetosBean.projetoSeleciona}"
+						actionListener="#{gestaoProjetosBean.prepararEdicao}"
+						oncomplete="PF('uploadDialogWidgetVar').show()"
+						update="uploadDialog" process="@this"
+						rendered="#{gestaoUsuariosBean.temPermissoes(['P', 'C'])}">
+						<p:resetInput target="uploadDialog" />
+					</p:commandButton>
+					
+					<!-- 
+					<p:commandButton title="Exportar para o Excel"
+						icon="fa fa-file-excel-o" ajax="false">
+						<p:dataExporter type="xls" target="projetosDataTable"
+							fileName="Projetos" />
+					</p:commandButton> -->
+				</f:facet>
+			</p:toolbar>
+
+			<p:spacer height="10px" />
+
+			<p:dataTable id="projetosDataTable"
+				value="#{gestaoProjetosBean.listaProjetos}" var="projeto"
+				emptyMessage="Nenhuma informação a ser exibida" paginator="true"
+				rows="10" paginatorPosition="bottom" selectionMode="single"
+				selection="#{gestaoProjetosBean.projeto}" rowKey="#{projeto.id}"
+				widgetVar="projetoTable">
+
+				<p:ajax event="rowSelect" update="frm:toolbar" />
+
+				<p:ajax event="rowUnselect" update="frm:toolbar" />
+
+				<p:column headerText="Título" sortBy="#{projeto.titulo}">
+					<h:outputText value="#{projeto.titulo}" />
+				</p:column>
+
+				<p:column headerText="Professor responsável">
+					<h:outputText value="#{projeto.professor.usuario.nome}" />
+				</p:column>
+
+				<p:column headerText="Alunos Participantes">
+					<p:dataList value="#{projeto.listaAlunos}" var="aluno">
+						<h:outputText value="#{aluno.usuario.nome}" />
+					</p:dataList>
+				</p:column>
+
+				<p:column headerText="Descrição do Projeto">
+					<h:outputText value="#{projeto.descricao}" />
+				</p:column>
+
+				<p:column filterBy="#{projeto.listaLinhaPesquisas[0].nome}"
+					headerText="Linha de Pesquisa">
+					<f:facet name="filter">
+						<p:selectOneMenu onchange="PF('projetoTable').filter()">
+							<f:selectItem itemLabel="Selecione..." itemValue="#{null}"
+								noSelectionOption="true" />
+							<f:selectItems value="#{gestaoProjetosBean.listaLinhaPesquisas}"
+								var="linhaPesquisa" itemLabel="#{linhaPesquisa.nome}"
+								itemValue="#{linhaPesquisa.nome}" />
+						</p:selectOneMenu>
+					</f:facet>
+					<p:dataList value="#{projeto.listaLinhaPesquisas}"
+						var="linhaPesquisa">
+						#{linhaPesquisa.nome}
+					</p:dataList>
+				</p:column>
+
+				<p:column headerText="Orgão de Fomento">
+					<h:outputText value="#{projeto.orgaoFomento.nome}" />
+				</p:column>
+				
+				<p:column headerText="Download">
+					<p:commandButton immediate="true" value="Download" ajax="false"
+						onclick="PrimeFaces.monitorDownload(start, stop);"
+						icon="ui-icon-arrowthick-1-s">
+						<p:fileDownload value="#{gestaoProjetosBean.file}" />
+					</p:commandButton>
+				</p:column>
+
+			</p:dataTable>
+
+			<!-- Dialog do novo projeto -->
+			<p:dialog id="projetoDialog" header="Novo projeto"
+				widgetVar="projetoDialogWidgetVar" modal="true" resizable="false"
+				closeOnEscape="true">
+				<p:messages id="projetoMessages" />
+
+				<p:defaultCommand target="salvarCommandButton" scope="projetoDialog" />
+
+				<h:panelGrid id="projetoPanelGrid" columns="2"
+					rendered="#{gestaoProjetosBean.projeto ne null}">
+
+					<p:outputLabel value="Título: " for="titulo" />
+					<p:inputText id="titulo" size="80" maxlength="120"
+						value="#{gestaoProjetosBean.projeto.titulo}" />
+
+					<p:outputLabel value="Professor responsável: " for="professor" />
+					<p:autoComplete id="professor" size="80"
+						value="#{gestaoProjetosBean.projeto.professor}"
+						completeMethod="#{gestaoMonografiasBean.completarProfessor}"
+						converter="#{gestaoMonografiasBean.professorConverter}"
+						var="professor" itemLabel="#{professor.usuario.nome}"
+						itemValue="#{professor}" forceSelection="true" groupBy="nome">
+					</p:autoComplete>
+
+					<p:outputLabel value="Aluno: " for="aluno" />
+					<p:autoComplete id="aluno" size="80" multiple="true"
+						value="#{gestaoProjetosBean.projeto.listaAlunos}"
+						completeMethod="#{gestaoMonografiasBean.completarAluno}"
+						var="aluno" itemLabel="#{aluno.usuario.nome}" itemValue="#{aluno}"
+						forceSelection="true" groupBy="nome"
+						converter="#{gestaoMonografiasBean.alunoConverter}">
+					</p:autoComplete>
+
+					<p:outputLabel value="Linha de Pesquisa: " for="linhaPesquisa" />
+					<p:selectCheckboxMenu id="linhaPesquisa"
+						converter="omnifaces.SelectItemsConverter"
+						value="#{gestaoProjetosBean.projeto.listaLinhaPesquisas}"
+						required="true" filter="true">
+						<f:attribute name="collectionType" value="java.util.ArrayList" />
+						<f:selectItems value="#{gestaoProjetosBean.listaLinhaPesquisas}"
+							var="linhaPesquisas" itemLabel="#{linhaPesquisas.nome}"
+							itemValue="#{linhaPesquisas}" />
+					</p:selectCheckboxMenu>
+
+					<p:outputLabel value="Orgão Fomento: " for="orgaoFomento" />
+					<p:selectOneMenu id="orgaoFomento"
+						value="#{gestaoProjetosBean.projeto.orgaoFomento}"
+						converter="omnifaces.SelectItemsConverter">
+						<f:selectItem itemLabel="Selecione..." itemValue=""
+							noSelectionOption="true" />
+						<f:selectItems value="#{gestaoProjetosBean.listaOrgaoFomento}"
+							var="orgaoFomento" itemLabel="#{orgaoFomento.nome}"
+							itemValue="#{orgaoFomento}" />
+					</p:selectOneMenu>
+
+					<p:outputLabel value="Descição do Projeto: " for="descricao" />
+					<p:inputTextarea id="descricao" rows="10" cols="50"
+						autoResize="true" value="#{gestaoProjetosBean.projeto.descricao}" />
+
+
+					<h:outputLabel />
+					<p:commandButton id="salvarCommandButton" value="Salvar"
+						actionListener="#{gestaoProjetosBean.salvar}"
+						update="projetoPanelGrid projetoMessages"
+						oncomplete="if (!args.validationFailed) PF('projetoDialogWidgetVar').hide()"
+						process="projetoDialog" />
+				</h:panelGrid>
+			</p:dialog>
+
+			<!-- Dialog de divulgar projetos-->
+			<p:dialog id="conviteDialog" header="Divulgar Projeto"
+				widgetVar="conviteDialogWidgetVar" modal="true" resizable="false"
+				closeOnEscape="true">
+				<p:messages id="conviteMessages" />
+
+				<p:defaultCommand target="salvarCommandButton" scope="conviteDialog" />
+
+				<h:panelGrid id="convitePanelGrid" columns="2"
+					rendered="#{gestaoUsuariosBean.usuario ne null}">
+
+					<p:outputLabel value="Assunto: " for="tituloProjeto" />
+					<p:inputText id="tituloProjeto" size="80" maxlength="120" required="true" 
+					requiredMessage="Campo Assunto obrigatório"
+						value="#{gestaoProjetosBean.usuario.assunto}" />
+
+					<p:outputLabel value="Aluno: " for="aluno" />
+					<p:autoComplete id="alunoDivulgação" size="80"
+						value="#{gestaoProjetosBean.aluno}"
+						completeMethod="#{gestaoMonografiasBean.completarAluno}"
+						var="aluno" itemLabel="#{aluno.usuario.nome}" itemValue="#{aluno}"
+						converter="#{gestaoMonografiasBean.alunoConverter}" required="true" resultsMessage="Campo Aluno obrigatório">
+						<p:ajax event="itemSelect"
+							listener="#{gestaoProjetosBean.handleSelect}" update="email" />
+					</p:autoComplete>
+
+					<p:outputLabel value="E-mail do Aluno: " for="email" />
+					<p:inputText id="email" size="80" maxlength="80" readonly="true"
+					required="true" requiredMessage="Campo E-mail obrigatório"
+						value="#{gestaoProjetosBean.aluno.usuario.email}">
+						<p:ajax event="change" process="@this" />
+					</p:inputText>
+
+					<p:outputLabel value="Mensagem para o aluno: "
+						for="descricaoProjeto" />
+					<p:inputTextarea id="descricaoProjeto" rows="10" cols="50" required="true" 
+					requiredMessage="Campo Mensagem obrigatório"
+						autoResize="true" value="#{gestaoProjetosBean.usuario.mensagem}" />
+
+					<p:blockUI block="frm" trigger="enviarEmailCommandButton">
+						<p:graphicImage library="sistema" name="gif-load.gif" />
+					</p:blockUI>
+
+					<h:outputLabel />
+
+					<p:commandButton id="enviarEmailCommandButton"
+						value="Enviar Convite"
+						actionListener="#{gestaoProjetosBean.enviarEmailAluno}"
+						update="convitePanelGrid conviteMessages"
+						oncomplete="if (!args.validationFailed) PF('conviteDialogWidgetVar').hide()"
+						process="conviteDialog" />
+				</h:panelGrid>
+			</p:dialog>
+
+			<!-- Dialog de manifestar interesse em projeto -->
+			<p:dialog id="solicitarDialog" header="Manifestar interresse em Projeto"
+				widgetVar="solicitarDialogWidgetVar" modal="true" resizable="false"
+				closeOnEscape="true">
+				<p:messages id="solicitarMessages" />
+
+				<p:defaultCommand target="salvarCommandButton"
+					scope="solicitarDialog" />
+
+				<h:panelGrid id="solicitarPanelGrid" columns="2"
+					rendered="#{gestaoUsuariosBean.usuario ne null}">
+
+					<p:outputLabel value="Assunto: " for="tituloProjeto" />
+					<p:inputText size="80" maxlength="120" 
+					required="true" requiredMessage="Campo Assunto obrigatório"
+						value="#{gestaoProjetosBean.usuario.assunto}" />
+
+					<p:outputLabel value="Professor: " for="professorConvite" />
+					<p:autoComplete id="professorConvite" size="80"
+						value="#{gestaoProjetosBean.professor}"
+						completeMethod="#{gestaoMonografiasBean.completarProfessor}"
+						converter="#{gestaoMonografiasBean.professorConverter}"
+						var="professor" itemLabel="#{professor.usuario.nome}"
+						itemValue="#{professor}" forceSelection="true" groupBy="nome"
+						required="true" requiredMessage="Campo Professor obrigatório">
+						<p:ajax event="itemSelect"
+							listener="#{gestaoProjetosBean.handleSelect}"
+							update="emailProfessor" />
+					</p:autoComplete>
+
+					<p:outputLabel value="E-mail do Professor: " for="emailProfessor" />
+					<p:inputText id="emailProfessor" size="80" maxlength="80" readonly="true"
+					required="true" requiredMessage="Campo E-mail obrigatório"
+						value="#{gestaoProjetosBean.professor.usuario.email}">
+						<p:ajax event="change" process="@this" />
+					</p:inputText>
+
+					<p:outputLabel value="Mensagem para o professor: "
+						for="descricaoProjeto" />
+					<p:inputTextarea rows="10" cols="50" autoResize="true" required="true" 
+					requiredMessage="Campo Mensagem obrigatório"
+						value="#{gestaoProjetosBean.usuario.mensagem}" />
+
+					<p:blockUI block="frm" trigger="enviarEmailSolicitarCommandButton">
+						<p:graphicImage library="sistema" name="gif-load.gif" />
+					</p:blockUI>
+
+					<h:outputLabel />
+					<p:commandButton id="enviarEmailSolicitarCommandButton"
+						value="Enviar"
+						actionListener="#{gestaoProjetosBean.enviarEmailProfessor}"
+						update="solicitarPanelGrid solicitarMessages"
+						oncomplete="if (!args.validationFailed) PF('solicitarDialogWidgetVar').hide()"
+						process="solicitarDialog" />
+				</h:panelGrid>
+			</p:dialog>
+
+			<!-- Dialog de Associar aluno a Vaga -->
+			<p:dialog id="associarDialog" header="Associar aluno a vaga"
+				widgetVar="associarDialogWidgetVar" modal="true" resizable="false"
+				closeOnEscape="true">
+				<p:messages id="associarMessages" />
+
+				<p:defaultCommand target="salvarAssociarCommandButton"
+					scope="associarDialog" />
+
+				<h:panelGrid id="associarPanelGrid" columns="2"
+					rendered="#{gestaoProjetosBean.projeto ne null}">
+
+					<p:outputLabel value="Título do Projeto: " for="tituloProjeto" />
+					<p:inputText id="tituloAssociarProjeto" size="80" maxlength="120"
+						value="#{gestaoProjetosBean.projeto.titulo}" />
+						
+					<p:outputLabel value="Aluno: " for="aluno" />
+					<p:autoComplete id="alunoAssociar" size="80"
+						value="#{gestaoProjetosBean.projeto.listaAlunos}"
+						completeMethod="#{gestaoMonografiasBean.completarAluno}"
+						var="aluno" multiple="true"
+						itemLabel="#{aluno.usuario.nome}" itemValue="#{aluno}">
+						<o:converter converterId="omnifaces.ListConverter" list="#{gestaoProjetosBean.listaAlunos}" />
+					</p:autoComplete>
+
+					<h:outputLabel />
+					<p:commandButton id="salvarAssociarCommandButton" value="Associar"
+						actionListener="#{gestaoProjetosBean.salvar}"
+						update="associarPanelGrid projetoMessages"
+						oncomplete="if (!args.validationFailed) PF('associarDialogWidgetVar').hide()"
+						process="associarDialog" />
+				</h:panelGrid>
+			</p:dialog>
+			
+			<!-- Dialog de upload de arquivo-->
+			<p:dialog id="uploadDialog" header="Upload de arquivo"
+				widgetVar="uploadDialogWidgetVar" modal="true" resizable="false"
+				closeOnEscape="true">
+				<p:messages id="uploadMessages" />
+
+				<p:defaultCommand target="uploadCommandButton" scope="uploadDialog" />
+
+				<h:panelGrid id="uploadPanelGrid" columns="2"
+					rendered="#{gestaoProjetosBean.projeto ne null}">
+					
+					<p:outputLabel value="Título do Projeto: "
+						for="tituloProjeto" />
+					<p:inputText  size="80" maxlength="120"
+						value="#{gestaoProjetosBean.projeto.titulo}" />
+
+					<p:fileUpload label="Upload" fileUploadListener="#{gestaoProjetosBean.upload}" mode="advanced"
+                     update="messages" auto="true" allowTypes="/(\.|\/)(pdf)$/" />
+ 
+   					 <p:growl id="uploadmessages" showDetail="true" />  
+
+					<h:outputLabel />
+					<p:commandButton id="uploadCommandButton" value="Salvar"
+						actionListener="#{gestaoProjetosBean.salvar}"
+						update="uploadPanelGrid projetoMessages"
+						oncomplete="if (!args.validationFailed) PF('uploadDialogWidgetVar').hide()"
+						process="uploadDialog" />
+				</h:panelGrid>
+			</p:dialog>
+		</h:form>
+	</ui:define>
+
+</ui:composition>

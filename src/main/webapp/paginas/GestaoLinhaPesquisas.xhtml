@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<ui:composition xmlns="http://www.w3.org/1999/xhtml"
+	xmlns:h="http://xmlns.jcp.org/jsf/html"
+	xmlns:f="http://xmlns.jcp.org/jsf/core"
+	xmlns:p="http://primefaces.org/ui"
+	xmlns:ui="http://xmlns.jcp.org/jsf/facelets"
+	template="/WEB-INF/template/Layout.xhtml">
+
+	<ui:define name="titulo">
+		<title>Gestão Linhas de Pesquisa</title>
+	</ui:define>
+	<ui:define name="conteudo">
+
+		<f:metadata>
+			<f:viewAction action="#{gestaoLinhaPesquisasBean.todasLinhaPesquisas}" />
+		</f:metadata>
+
+		<h:form id="frm">
+			<p:messages id="messages" />
+
+			<p:spacer height="20px" />
+
+			<p:toolbar id="toolbar">
+				<f:facet name="left">
+					<p:inputText id="termoPesquisa"
+						placeholder="Digite aqui um termo para pesquisa..." size="30"
+						value="#{gestaoLinhaPesquisasBean.termoPesquisa}" />
+
+					<p:commandButton value="Pesquisar" icon="fa fa-search"
+						actionListener="#{gestaoLinhaPesquisasBean.pesquisar}"
+						update="linhaPesquisasDataTable messages"
+						process="@this termoPesquisa" />
+
+					<span class="ui-separator"> <span
+						class="ui-icon ui-icon-grip-dotted-vertical" />
+					</span>
+
+					<p:commandButton value="Cadastrar Linha de Pesquisa" icon="fa fa-plus"
+						actionListener="#{gestaoLinhaPesquisasBean.prepararNovaLinhaPesquisa}"
+						oncomplete="PF('linhaPesquisaDialogWidgetVar').show()"
+						update="linhaPesquisaDialog" process="@this"
+						rendered="#{gestaoUsuariosBean.temPermissoes(['C'])}">
+						<p:resetInput target="linhaPesquisaDialog" />
+					</p:commandButton>
+
+					<span class="ui-separator"> <span
+						class="ui-icon ui-icon-grip-dotted-vertical" />
+					</span>
+
+					<p:commandButton title="Editar" icon="fa fa-edit"
+						disabled="#{not gestaoLinhaPesquisasBean.linhaPesquisaSeleciona}"
+						actionListener="#{gestaoLinhaPesquisasBean.prepararEdicao}"
+						oncomplete="PF('linhaPesquisaDialogWidgetVar').show()"
+						update="linhaPesquisaDialog" process="@this"
+						rendered="#{gestaoUsuariosBean.temPermissoes(['C'])}">
+						<p:resetInput target="linhaPesquisaDialog" />
+					</p:commandButton>
+
+					<span class="ui-separator"> <span
+						class="ui-icon ui-icon-grip-dotted-vertical" />
+					</span>
+
+					<p:commandButton title="Exportar para o Excel"
+						icon="fa fa-file-excel-o" ajax="false">
+						<p:dataExporter type="xls" target="linhaPesquisasDataTable"
+							fileName="LinhasdePesquisa" />
+					</p:commandButton>
+				</f:facet>
+			</p:toolbar>
+
+			<p:spacer height="10px" />
+
+			<p:dataTable id="linhaPesquisasDataTable"
+				value="#{gestaoLinhaPesquisasBean.listaLinhaPesquisas}" var="linhaPesquisa"
+				emptyMessage="Nenhuma informação a ser exibida" paginator="true"
+				rows="10" paginatorPosition="bottom" selectionMode="single"
+				selection="#{gestaoLinhaPesquisasBean.linhaPesquisa}" rowKey="#{linhaPesquisa.id}">
+
+				<p:ajax event="rowSelect" update="frm:toolbar" />
+
+				<p:ajax event="rowUnselect" update="frm:toolbar" />
+
+				<p:column headerText="Nome" sortBy="#{linhaPesquisa.nome}">
+					<h:outputText value="#{linhaPesquisa.nome}" />
+				</p:column>
+
+			</p:dataTable>
+
+			<!-- Dialog do cadastro de linha de pesquisa -->
+			<p:dialog id="linhaPesquisaDialog" header="Nova"
+				widgetVar="linhaPesquisaDialogWidgetVar" modal="true"
+				resizable="false" closeOnEscape="true">
+				<p:messages id="linhaPesquisaMessages" />
+
+				<p:defaultCommand target="salvarCommandButton"
+					scope="linhaPesquisaDialog" />
+
+				<h:panelGrid id="linhaPesquisaPanelGrid" columns="2"
+					rendered="#{gestaoLinhaPesquisasBean.linhaPesquisa ne null}">
+
+					<p:outputLabel value="Nome " for="nome" />
+					<p:inputText id="nome" size="80" maxlength="120"
+						value="#{gestaoLinhaPesquisasBean.linhaPesquisa.nome}" />
+					<h:outputLabel />
+					
+					<p:commandButton id="salvarCommandButton" value="Cadastrar"
+						actionListener="#{gestaoLinhaPesquisasBean.salvar}"
+						update="linhaPesquisaPanelGrid linhaPesquisaMessages"
+						oncomplete="if (!args.validationFailed) PF('linhaPesquisaDialogWidgetVar').hide()"
+						process="linhaPesquisaDialog" />
+				</h:panelGrid>
+			</p:dialog>
+		</h:form>
+	</ui:define>
+
+</ui:composition>

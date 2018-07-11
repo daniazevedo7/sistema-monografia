@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<ui:composition xmlns="http://www.w3.org/1999/xhtml"
+	xmlns:h="http://xmlns.jcp.org/jsf/html"
+	xmlns:f="http://xmlns.jcp.org/jsf/core"
+	xmlns:p="http://primefaces.org/ui"
+	xmlns:ui="http://xmlns.jcp.org/jsf/facelets"
+	template="/WEB-INF/template/Layout.xhtml">
+
+	<ui:define name="titulo">
+		<title>Gestão Professores</title>
+	</ui:define>
+	<ui:define name="conteudo">
+
+		<f:metadata>
+			<f:viewAction action="#{gestaoProfessoresBean.todosProfessores}" />
+		</f:metadata>
+
+		<h:form id="frm">
+			<p:messages id="messages" />
+
+			<p:spacer height="20px" />
+
+			<p:toolbar id="toolbar">
+				<f:facet name="left">
+					<p:inputText id="termoPesquisa"
+						placeholder="Digite aqui um termo para pesquisa..." size="30"
+						value="#{gestaoProfessoresBean.termoPesquisa}" />
+
+					<p:commandButton value="Pesquisar" icon="fa fa-search"
+						actionListener="#{gestaoProfessoresBean.pesquisar}"
+						update="professoresDataTable messages"
+						process="@this termoPesquisa" />
+
+					<span class="ui-separator"> <span
+						class="ui-icon ui-icon-grip-dotted-vertical" />
+					</span>
+
+					<p:commandButton value="Cadastrar Professor" icon="fa fa-plus"
+						actionListener="#{gestaoProfessoresBean.prepararNovoProfessor}"
+						oncomplete="PF('professorDialogWidgetVar').show()"
+						update="professorDialog" process="@this"
+						rendered="#{gestaoUsuariosBean.temPermissoes(['C'])}">
+						<p:resetInput target="professorDialog" />
+					</p:commandButton>
+
+					<span class="ui-separator"> <span
+						class="ui-icon ui-icon-grip-dotted-vertical" />
+					</span>
+
+					<p:commandButton title="Editar" icon="fa fa-edit"
+						disabled="#{not gestaoProfessoresBean.professorSeleciona}"
+						actionListener="#{gestaoProfessoresBean.prepararEdicao}"
+						oncomplete="PF('professorDialogWidgetVar').show()"
+						update="professorDialog" process="@this"
+						rendered="#{gestaoUsuariosBean.temPermissoes(['C'])}">
+						<p:resetInput target="professorDialog" />
+					</p:commandButton>
+
+					<span class="ui-separator"> <span
+						class="ui-icon ui-icon-grip-dotted-vertical" />
+					</span>
+
+					<!-- <p:commandButton title="Exportar para o Excel"
+						icon="fa fa-file-excel-o" ajax="false">
+						<p:dataExporter type="xls" target="professoresDataTable"
+							fileName="Professores" />
+					</p:commandButton> -->
+				</f:facet>
+			</p:toolbar>
+
+			<p:spacer height="10px" />
+
+			<p:dataTable id="professoresDataTable"
+				value="#{gestaoProfessoresBean.listaProfessores}" var="professor"
+				emptyMessage="Nenhuma informação a ser exibida" paginator="true"
+				rows="10" paginatorPosition="bottom" selectionMode="single"
+				selection="#{gestaoProfessoresBean.professor}"
+				rowKey="#{professor.id}">
+
+				<p:ajax event="rowSelect" update="frm:toolbar" />
+
+				<p:ajax event="rowUnselect" update="frm:toolbar" />
+
+				<p:column headerText="Professor">
+					<h:outputText value="#{professor.usuario.nome}" />
+				</p:column>
+
+				<p:column headerText="Matricula">
+					<h:outputText value="#{professor.usuario.matricula}" />
+				</p:column>
+
+				<p:column headerText="E-mail">
+					<h:outputText value="#{professor.usuario.email}" />
+				</p:column>
+
+				<p:column filterBy="#{professor.listaLinhaPesquisas[0].nome}"
+					headerText="Linha de Pesquisa" >
+					<f:facet name="filter">
+						<p:selectOneMenu onchange="PF('professorTable').filter()" >
+							<f:selectItem itemLabel="Selecione..." itemValue="#{null}"
+								noSelectionOption="true"  />
+							<f:selectItems value="#{gestaoProfessoresBean.listaLinhaPesquisas}"
+								var="linhaPesquisa" itemLabel="#{linhaPesquisa.nome}"
+								itemValue="#{linhaPesquisa.nome}"  />
+						</p:selectOneMenu>
+					</f:facet>
+					<p:dataList value="#{professor.listaLinhaPesquisas}"
+						var="linhaPesquisa">
+						<h:outputText value="#{linhaPesquisa.nome}" />
+					</p:dataList>
+				</p:column>
+				<!-- <p:column headerText="Linha(s) de Pesquisa de interesse">
+					<h:outputText value="#{aluno.linhaPesquisa.nome}" />
+				</p:column> -->
+
+			</p:dataTable>
+
+			<!-- Dialog Novo Professor -->
+			<p:dialog id="professorDialog" header="Cadastrar professor"
+				widgetVar="professorDialogWidgetVar" modal="true" resizable="false"
+				closeOnEscape="true">
+				<p:messages id="professorMessages" />
+
+				<p:defaultCommand target="salvarCommandButton"
+					scope="professorDialog" />
+
+				<h:panelGrid id="professorPanelGrid" columns="2"
+					rendered="#{gestaoProfessoresBean.professor ne null}">
+
+
+					<p:outputLabel value="Nome: " for="nome" />
+					<p:inputText id="nome" size="80" maxlength="120"
+						value="#{gestaoProfessoresBean.professor.usuario.nome}" />
+
+					<p:outputLabel value="E-mail " for="email" />
+					<p:inputText id="email" size="80" maxlength="80"
+						value="#{gestaoProfessoresBean.professor.usuario.email}" />
+
+					<p:outputLabel value="Linha de Pesquisa: " for="linhaPesquisa" />
+					<p:selectCheckboxMenu id="linhaPesquisa"
+						converter="omnifaces.SelectItemsConverter"
+						value="#{gestaoProfessoresBean.professor.listaLinhaPesquisas}"
+						required="true" filter="true">
+						<f:attribute name="collectionType" value="java.util.ArrayList" />
+						<f:selectItems
+							value="#{gestaoProfessoresBean.listaLinhaPesquisas}"
+							var="linhaPesquisas" itemLabel="#{linhaPesquisas.nome}"
+							itemValue="#{linhaPesquisas}" />
+					</p:selectCheckboxMenu>
+
+					<p:outputLabel value="Matricula " for="matricula" />
+					<p:inputText id="matricula" size="10" maxlength="8"
+						value="#{gestaoProfessoresBean.professor.usuario.matricula}" />
+<!-- 
+					<p:outputLabel value="Senha " for="senha" />
+					<p:password id="senha" size="10" maxlength="8"
+						value="#{gestaoProfessoresBean.professor.usuario.senha}" />
+ -->
+
+					<h:outputLabel />
+					<p:commandButton id="salvarCommandButton" value="Salvar"
+						actionListener="#{gestaoProfessoresBean.salvar}"
+						update="professorPanelGrid professorMessages"
+						oncomplete="if (!args.validationFailed) PF('professorDialogWidgetVar').hide()"
+						process="professorDialog" />
+				</h:panelGrid>
+			</p:dialog>
+		</h:form>
+	</ui:define>
+
+</ui:composition>

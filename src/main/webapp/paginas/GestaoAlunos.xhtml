@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<ui:composition xmlns="http://www.w3.org/1999/xhtml"
+	xmlns:h="http://xmlns.jcp.org/jsf/html"
+	xmlns:f="http://xmlns.jcp.org/jsf/core"
+	xmlns:p="http://primefaces.org/ui"
+	xmlns:ui="http://xmlns.jcp.org/jsf/facelets"
+	template="/WEB-INF/template/Layout.xhtml">
+
+	<ui:define name="titulo">
+		<title>Gestão Alunos</title>
+	</ui:define>
+	<ui:define name="conteudo">
+
+		<f:metadata>
+			<f:viewAction action="#{gestaoAlunosBean.todosAlunos}" />
+		</f:metadata>
+
+		<h:form id="frm">
+			<p:messages id="messages" />
+
+			<p:spacer height="20px" />
+
+			<p:toolbar id="toolbar">
+				<f:facet name="left">
+					<p:inputText id="termoPesquisa"
+						placeholder="Digite aqui um termo para pesquisa..." size="30"
+						value="#{gestaoAlunosBean.termoPesquisa}" />
+
+					<p:commandButton value="Pesquisar" icon="fa fa-search"
+						actionListener="#{gestaoAlunosBean.pesquisar}"
+						update="alunosDataTable messages" process="@this termoPesquisa" />
+
+					<span class="ui-separator"> <span
+						class="ui-icon ui-icon-grip-dotted-vertical" />
+					</span>
+
+					<p:commandButton value="Cadastrar Aluno" icon="fa fa-plus"
+						actionListener="#{gestaoAlunosBean.prepararNovoAluno}"
+						oncomplete="PF('alunoDialogWidgetVar').show()"
+						update="alunoDialog" process="@this"
+						rendered="#{gestaoUsuariosBean.temPermissoes(['C'])}">
+						<p:resetInput target="alunoDialog" />
+					</p:commandButton>
+
+					<span class="ui-separator"> <span
+						class="ui-icon ui-icon-grip-dotted-vertical" />
+					</span>
+
+					<span class="ui-separator"> <span
+						class="ui-icon ui-icon-grip-dotted-vertical" />
+					</span>
+
+					<p:commandButton title="Editar" icon="fa fa-edit"
+						disabled="#{not gestaoAlunosBean.alunoSeleciona}"
+						actionListener="#{gestaoAlunosBean.prepararEdicao}"
+						oncomplete="PF('alunoEditarDialogWidgetVar').show()"
+						update="alunoEditarDialog" process="@this"
+						rendered="#{gestaoUsuariosBean.temPermissoes(['C'])}">
+						<p:resetInput target="alunoEditarDialog" />
+					</p:commandButton>
+
+					<span class="ui-separator"> <span
+						class="ui-icon ui-icon-grip-dotted-vertical" />
+					</span>
+
+					<!-- <p:commandButton title="Exportar para o Excel"
+						icon="fa fa-file-excel-o" ajax="false">
+						<p:dataExporter type="xls" target="alunosDataTable"
+							fileName="ALunos" />
+					</p:commandButton> -->
+				</f:facet>
+			</p:toolbar>
+
+			<p:spacer height="10px" />
+
+			<p:dataTable id="alunosDataTable" widgetVar="alunoTable"
+				value="#{gestaoAlunosBean.listaAlunos}" var="aluno"
+				emptyMessage="Nenhuma informação a ser exibida" paginator="true"
+				rows="10" paginatorPosition="bottom" selectionMode="single"
+				selection="#{gestaoAlunosBean.aluno}" rowKey="#{aluno.id}">
+
+				<p:ajax event="rowSelect" update="frm:toolbar" />
+
+				<p:ajax event="rowUnselect" update="frm:toolbar" />
+
+				<p:column headerText="Aluno">
+					<h:outputText value="#{aluno.usuario.nome}" />
+				</p:column>
+				
+				<p:column headerText="Curso">
+					<h:outputText value="#{aluno.curso}" />
+				</p:column>
+
+				<p:column headerText="Matricula">
+					<h:outputText value="#{aluno.usuario.matricula}" />
+				</p:column>
+
+				<p:column headerText="E-mail">
+					<h:outputText value="#{aluno.usuario.email}" />
+				</p:column>
+
+				<p:column filterBy="#{aluno.listaLinhaPesquisas[0].nome}"
+					headerText="Linha de Pesquisa" >
+					<f:facet name="filter">
+						<p:selectOneMenu onchange="PF('alunoTable').filter()" >
+							<f:selectItem itemLabel="Selecione..." itemValue="#{null}"
+								noSelectionOption="true"  />
+							<f:selectItems value="#{gestaoAlunosBean.listaLinhaPesquisas}"
+								var="linhaPesquisa" itemLabel="#{linhaPesquisa.nome}"
+								itemValue="#{linhaPesquisa.nome}"  />
+						</p:selectOneMenu>
+					</f:facet>
+					<p:dataList value="#{aluno.listaLinhaPesquisas}"
+						var="linhaPesquisa">
+						<h:outputText value="#{linhaPesquisa.nome}" />
+					</p:dataList>
+				</p:column>
+				<!-- <p:column headerText="Linha(s) de Pesquisa de interesse">
+					<h:outputText value="#{aluno.linhaPesquisa.nome}" />
+				</p:column> -->
+
+			</p:dataTable>
+
+			<p:dialog id="alunoDialog" header="Cadastrar aluno"
+				widgetVar="alunoDialogWidgetVar" modal="true" resizable="false"
+				closeOnEscape="true">
+				<p:messages id="alunoMessages" />
+
+				<p:defaultCommand target="salvarCommandButton" scope="alunoDialog" />
+
+				<h:panelGrid id="alunoPanelGrid" columns="2"
+					rendered="#{gestaoAlunosBean.aluno ne null}">
+
+					<p:outputLabel value="Nome: " for="nome" />
+					<p:inputText id="nome" size="80" maxlength="120"
+						value="#{gestaoAlunosBean.aluno.usuario.nome}" />
+						
+					<p:outputLabel value="Curso: " for="curso" />
+					<p:inputText id="curso" size="80" maxlength="120"
+						value="#{gestaoAlunosBean.aluno.curso}" />
+
+					<p:outputLabel value="E-mail " for="email" />
+					<p:inputText id="email" size="80" maxlength="80"
+						value="#{gestaoAlunosBean.aluno.usuario.email}" />
+
+					<p:outputLabel value="Linha de Pesquisa: " for="linhaPesquisa" />
+					<p:selectCheckboxMenu id="linhaPesquisa"
+						converter="omnifaces.SelectItemsConverter"
+						value="#{gestaoAlunosBean.aluno.listaLinhaPesquisas}"
+						required="true" filter="true">
+						<f:attribute name="collectionType" value="java.util.ArrayList" />
+						<f:selectItems value="#{gestaoAlunosBean.listaLinhaPesquisas}"
+							var="linhaPesquisas" itemLabel="#{linhaPesquisas.nome}"
+							itemValue="#{linhaPesquisas}" />
+					</p:selectCheckboxMenu>
+
+					<p:outputLabel value="Matricula " for="matricula" />
+					<p:inputText id="matricula" size="10" maxlength="8"
+						value="#{gestaoAlunosBean.aluno.usuario.matricula}" />
+
+					<!-- <p:outputLabel value="Senha " for="senha" />
+					<p:password id="senha" size="10" maxlength="8" required="true"
+						value="#{gestaoAlunosBean.aluno.usuario.senha}" /> -->
+
+					<h:outputLabel />
+					<p:commandButton id="salvarCommandButton" value="Salvar"
+						actionListener="#{gestaoAlunosBean.salvar}"
+						update="alunoPanelGrid alunoMessages"
+						oncomplete="if (!args.validationFailed) PF('alunoDialogWidgetVar').hide()"
+						process="alunoDialog" />
+				</h:panelGrid>
+			</p:dialog>
+			
+			<!-- Dialog de editar Aluno -->
+			<p:dialog id="alunoEditarDialog" header="Editar aluno"
+				widgetVar="alunoEditarDialogWidgetVar" modal="true" resizable="false"
+				closeOnEscape="true">
+				<p:messages id="alunoEditarMessages" />
+
+				<p:defaultCommand target="editarCommandButton" scope="alunoEditarDialog" />
+
+				<h:panelGrid id="alunoEditarPanelGrid" columns="2"
+					rendered="#{gestaoAlunosBean.aluno ne null}">
+
+					<p:outputLabel value="Nome: " for="nome" />
+					<p:inputText id="nomeEditar" size="80" maxlength="120"
+						value="#{gestaoAlunosBean.aluno.usuario.nome}" />
+						
+					<p:outputLabel value="Curso: " for="curso" />
+					<p:inputText id="cursoEditar" size="80" maxlength="120"
+						value="#{gestaoAlunosBean.aluno.curso}" />
+
+					<p:outputLabel value="E-mail " for="email" />
+					<p:inputText id="emailEditar" size="80" maxlength="80"
+						value="#{gestaoAlunosBean.aluno.usuario.email}" />
+
+					<p:outputLabel value="Linha de Pesquisa: " for="linhaPesquisa" />
+					<p:selectCheckboxMenu id="linhaPesquisaEditar"
+						converter="omnifaces.SelectItemsConverter"
+						value="#{gestaoAlunosBean.aluno.listaLinhaPesquisas}"
+						required="true" filter="true">
+						<f:attribute name="collectionType" value="java.util.ArrayList" />
+						<f:selectItems value="#{gestaoAlunosBean.listaLinhaPesquisas}"
+							var="linhaPesquisas" itemLabel="#{linhaPesquisas.nome}"
+							itemValue="#{linhaPesquisas}" />
+					</p:selectCheckboxMenu>
+
+					<h:outputLabel />
+					<p:commandButton id="editarCommandButton" value="Editar"
+						actionListener="#{gestaoAlunosBean.salvar}"
+						update="alunoEditarPanelGrid alunoEditarMessages"
+						oncomplete="if (!args.validationFailed) PF('alunoEditarDialogWidgetVar').hide()"
+						process="alunoEditarDialog" />
+				</h:panelGrid>
+			</p:dialog>
+		</h:form>
+	</ui:define>
+
+</ui:composition>
